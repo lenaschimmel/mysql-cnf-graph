@@ -10,3 +10,5 @@ Use this syntax to create an image file:
 where `filename` is the file that will be generated and `type` can be, for example, `pdf` or `svg`.
 If you use `svg`, each file in the diagram will be linked to the actual file. Open ile in a browser to use those links.
 
+## Example
+<img src="./example.svg">
