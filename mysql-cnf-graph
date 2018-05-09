@@ -2,12 +2,16 @@
 
 # Output the README.md for conveiniance. Prepend it with slashes so that dot will ignore it
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-while IFS='' read -r line || [[ -n "$line" ]]; do
-    if [[ $line = "## Example" ]]; then
-        break
-    fi
-    echo "// $line"
-done < "$SCRIPTDIR/README.md"
+if [ -f $SCRIPTDIR/README.md ]; then
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        if [[ $line = "## Example" ]]; then
+            break
+        fi
+        echo "// $line"
+    done < "$SCRIPTDIR/README.md"
+else
+    echo "// See https://github.com/lenaschimmel/mysql-cnf-graph/ for help."
+fi
 echo
 
 function processFile {
