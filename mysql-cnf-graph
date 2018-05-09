@@ -18,14 +18,29 @@ function processFile {
     if [ -f $1 ]; then
         echo "    "\"$FILE\" [href=\"file://$1\"];          # node for existing file
         
-        DIRS=`grep "!includedir" $1`
-        FILES=`grep "!include " $1`
+        # We need to grep for include and includedir at the same time to preserve ordering
 
+        FILES=`grep "\!include" $1`
+        local I=0
         for FILE in $FILES; do
-            if [[ ! $FILE = "!include" ]]; then
-                echo "    \"$1\" -> "\"$FILE\";             # link file -> file
-                processFile $DIR
+            if [[ $FILE = "!include" ]]; then
+                MODE="file"
+            else 
+                if [[ $FILE = "!includedir" ]]; then
+                    MODE="dir"
+                else
+                    ((I++))
+                    # mode should have been set by a previous line
+                    echo "    \"$1\" -> "\"$FILE\" [label=\"\(order $I\)\"];             # link file -> (file or dir)
+
+                    if [[ $MODE = "file" ]]; then
+                        processFile $FILE
+                    else 
+                        processDir $FILE
+                    fi
+                fi
             fi
+            
         done 
         for DIR in $DIRS; do
             if [[ ! $DIR = "!includedir" ]]; then
@@ -59,9 +74,11 @@ echo "digraph mysql {"
 
 echo "    "ROOT [shape=diamond];                            # node for root
 
+I=0
 for FILE in $ROOTS; do
-  echo "    ROOT -> "\"$FILE\";                             # link root -> file
-  processFile $FILE
+    ((I++))
+    echo "    ROOT -> "\"$FILE\" [label=\"\(order $I\)\"];                             # link root -> file
+    processFile $FILE
 done 
 
 echo "}"
