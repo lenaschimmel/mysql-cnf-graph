@@ -1,0 +1,60 @@
+#!/bin/bash
+
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+while IFS='' read -r line || [[ -n "$line" ]]; do
+    echo "// $line"
+done < "$SCRIPTDIR/README.md"
+echo
+
+function processFile {
+    if [ -f $1 ]; then
+        echo "    "\"$FILE\" [href=\"file://$1\"];          # node for existing file
+        
+        DIRS=`grep "!includedir" $1`
+        FILES=`grep "!include " $1`
+
+        for FILE in $FILES; do
+            if [[ ! $FILE = "!include" ]]; then
+                echo "    \"$1\" -> "\"$FILE\";             # link file -> file
+                processFile $DIR
+            fi
+        done 
+        for DIR in $DIRS; do
+            if [[ ! $DIR = "!includedir" ]]; then
+                echo "    \"$1\" -> "\"$DIR\";              # link file -> dir
+                processDir $DIR
+            fi
+        done 
+    else
+        echo "    "\"$1\" [style=dotted];                   # node for missing file
+    fi
+}
+
+function processDir {
+    if [ -d $1 ]; then
+        echo "    "\"$1\" [shape=box];                      # node for existing dir
+
+        FILES=`find $1 -type f -name "*.cnf"`
+
+        for FILE in $FILES; do
+            echo "    \"$1\" -> "\"$FILE\";                 # link dir -> file
+            processFile $FILE
+        done 
+    else
+        echo "    "\"$1\" [style=dotted, shape=box];        # node for missing dir
+    fi
+}
+
+ROOTS=`mysqld --verbose --help 2> /dev/null | grep -A 1 "Default options" | tail -n 1`
+
+echo "digraph mysql {"
+
+echo "    "ROOT [shape=diamond];                            # node for root
+
+for FILE in $ROOTS; do
+  echo "    ROOT -> "\"$FILE\";                             # link root -> file
+  processFile $FILE
+done 
+
+echo "}"
